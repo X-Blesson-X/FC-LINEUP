@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FC LINEUP | Aesthetic Lineup Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;500;700;900&display=swap');
+
+        /* --- POPUP MODAL STYLES --- */
+#welcome-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(0px);
+    z-index: 3000; display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease;
+}
+.modal-content {
+    max-width: 450px; width: 90%; transform: scale(0.9);
+    animation: modalPop 0.4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes modalPop {
+    to { transform: scale(1); }
+}
+.step-pill {
+    background: rgba(212, 175, 55, 0.1); border-left: 3px solid #D4AF37;
+    padding: 12px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+}
+
+/*till here  */
+        
+        body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; touch-action: manipulation; }
+        .font-elite { font-family: 'Syncopate', sans-serif; }
+        .gold-text { color: #D4AF37; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        /* --- LAYOUT WRAPPER --- */
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .workspace {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+        }
+
+        /* --- DYNAMIC PITCH --- */
+        #pitch-container {
+            display: flex; justify-content: center; align-items: center; 
+            padding: 10px;
+            flex-shrink: 0;
+        }
+
+        #pitch {
+            background: 
+                radial-gradient(circle at center, transparent 0%, transparent 45px, rgba(255,255,255,0.05) 45px, rgba(255,255,255,0.05) 46px, transparent 46px),
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                radial-gradient(circle at center, #111 0%, #000 100%);
+            background-size: 100% 100%, 100% 60px, 100% 100%;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 40px; position: relative; overflow: hidden;
+            transition: width 0.5s ease, height 0.5s ease;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+        }
+
+        /* --- JERSEY DESIGN --- */
+        .jersey {
+            position: absolute; width: 80px;
+            display: flex; flex-direction: column; align-items: center;
+            cursor: grab; z-index: 40; user-select: none;
+            will-change: transform, left, top;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s ease, opacity 0.3s, left 0.5s ease, top 0.5s ease;
+        }
+        
+        .jersey.dragging { 
+            cursor: grabbing; 
+            transform: translate(-50%, -50%) scale(1.1); 
+            z-index: 100; 
+            transition: transform 0.1s ease; 
+        }
+        
+        .jersey-icon {
+            width: 44px; height: 50px; background: #1a1a1a;
+            border: 2px solid #D4AF37; border-radius: 4px;
+            position: relative; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        }
+
+        .jersey-icon::before, .jersey-icon::after {
+            content: ''; position: absolute; top: 6px; width: 14px; height: 24px;
+            background: #1a1a1a; border: 2px solid #D4AF37; z-index: -1;
+        }
+        .jersey-icon::before { left: -11px; transform: rotate(-18deg); border-radius: 4px 0 0 4px; }
+        .jersey-icon::after { right: -11px; transform: rotate(18deg); border-radius: 0 4px 4px 0; }
+
+        .collar {
+            position: absolute; top: -2px; width: 20px; height: 9px;
+            background: #050505; border: 2px solid #D4AF37; border-top: 0;
+            border-radius: 0 0 12px 12px; z-index: 2;
+        }
+
+        /* GK Kit Variance */
+        .gk-jersey { z-index: 60 !important; }
+        .gk-jersey .jersey-icon, .gk-jersey .jersey-icon::before, .gk-jersey .jersey-icon::after {
+            background: #D4AF37 !important; border-color: #fff !important;
+        }
+        .gk-jersey .num-input { color: #000 !important; font-weight: 900; }
+        .gk-jersey .name-input { color: #D4AF37; text-shadow: 0 0 10px rgba(0,0,0,1); }
+
+        .jersey input {
+            background: transparent; border: none; color: white; text-align: center;
+            width: 100%; font-weight: 800; text-transform: uppercase; outline: none;
+        }
+        .jersey .num-input { font-size: 16px; color: #D4AF37; width: 35px; z-index: 5; pointer-events: auto; }
+        .jersey .name-input { font-size: 10px; margin-top: 8px; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 4px black; font-weight: 700; }
+        .jersey .pos-input { font-size: 9px; color: #888; font-weight: 400; margin-bottom: 2px; }
+
+        .hidden-player { display: none !important; }
+
+        #formation-badge {
+            position: absolute; top: 25px; right: 25px;  
+            width: 140px; padding: 12px; border-radius: 12px;
+            background: rgba(0,0,0,0.8); border: 1px solid #D4AF37;
+            font-family: 'Syncopate', sans-serif; font-size: 14px;
+            color: #D4AF37; z-index: 70; text-align: center;
+            outline: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #team-name-input {
+            background: transparent; border: none; border-bottom: 2px solid transparent;
+            font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 1.5rem;
+            color: white; width: 100%; outline: none; transition: 0.3s;
+        }
+        #team-name-input:focus { border-bottom-color: #D4AF37; color: #D4AF37; }
+
+        input[type=range] { appearance: none; background: rgba(212, 175, 55, 0.2); height: 4px; border-radius: 5px; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #D4AF37; cursor: pointer; }
+
+        /* --- SUBS PANEL STYLES --- */
+        .sub-row input {
+            background: transparent; border: none; outline: none;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 0; font-family: 'Inter', sans-serif;
+            transition: 0.3s;
+        }
+        .sub-row input:focus { border-bottom-color: #D4AF37; }
+        .sub-num { width: 40px; text-align: center; color: #D4AF37; font-weight: 700; }
+        .sub-name { flex: 1; color: white; text-transform: uppercase; font-size: 0.9rem; margin-left: 10px; }
+
+        /* Download Button Styles */
+        #download-btn {
+            position: fixed; bottom: 30px; left: 30px;
+            background: #D4AF37; color: black;
+            font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 12px;
+            padding: 15px 30px; border-radius: 50px; border: none;
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+            cursor: pointer; z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 10px;
+        }
+        #download-btn:hover {
+            transform: translateY(-5px); box-shadow: 0 15px 35px rgba(212, 175, 55, 0.6); background: white;
+        }
+        #download-btn svg { width: 16px; height: 16px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="welcome-modal">
+    <div class="modal-content glass p-8 rounded-3xl text-center">
+        <div class="w-16 h-1 bg-[#D4AF37] mx-auto mb-6"></div>
+        <h2 class="font-elite text-2xl mb-2 gold-text tracking-tighter">FC LINEUP</h2>
+        <p class="text-gray-400 text-[10px] uppercase tracking-widest mb-8">Create Aesthetic Formations</p>
+        
+        <div class="text-left">
+            <div class="step-pill">
+                <p class="text-[10px] text-[#D4AF37] font-black uppercase mb-1">01</p>
+                <p class="text-xs text-white">Enter your Team Name</p>
+            </div>
+            <div class="step-pill">
+                <p class="text-[10px] text-[#D4AF37] font-black uppercase mb-1">02</p>
+                <p class="text-xs text-white">Select Your Team Size</p>
+            </div>
+            <div class="step-pill" style="margin-bottom: 30px;">
+                <p class="text-[10px] text-[#D4AF37] font-black uppercase mb-1">03</p>
+                <p class="text-xs text-white">Set your formation then hit DOWNLOAD !</p>
+            </div>
+        </div>
+
+        <button onclick="closeModal()" class="w-full bg-[#D4AF37] hover:bg-white text-black font-elite text-xs py-4 rounded-xl transition-all duration-300 font-bold tracking-widest">
+            CREATE NOW
+        </button>
+    </div>
+</div>
+
+<script>
+    function closeModal() {
+        const modal = document.getElementById('welcome-modal');
+        modal.style.opacity = '0';
+        setTimeout(() => modal.style.display = 'none', 500);
+    }
+</script>
+
+    <div class="max-w-[1400px] mx-auto">
+        <header class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-end">
+            <div>
+                <input type="text" id="team-name-input" value="YOUR TEAM" spellcheck="false">
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest font-bold mt-2">Tactical Engine v3.0 </p>
+            </div>
+
+            <div class="glass p-4 rounded-2xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <label class="text-[10px] font-black uppercase text-gray-400">Squad Size</label>
+                    <span id="count-display" class="gold-text font-black text-lg">11v11</span>
+                </div>
+                <input type="range" id="player-count" min="4" max="11" value="11" oninput="updatePlayerCount(this.value)">
+            </div>
+
+            <div class="glass p-4 rounded-2xl">
+                <label class="text-[10px] font-black uppercase text-gray-400 block mb-2">Tactical Presets</label>
+                <select id="formation-select" onchange="applyFormationTemplate(this.value)" class="w-full bg-transparent border-b border-white/20 text-sm font-bold gold-text outline-none pb-1 cursor-pointer">
+                </select>
+            </div>
+        </header>
+
+        <div class="workspace">
+            
+            <div id="pitch-container">
+                <div id="pitch" style="width: 780px; height: 675px;"> <input type="text" id="formation-badge" value="4-3-3" spellcheck="false">
+                    <div class="absolute top-1/2 left-0 w-full h-[1px] bg-white/10"></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border border-white/10 rounded-full"></div>
+                    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-24 border-t border-l border-r border-white/5"></div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-2xl w-full lg:w-80">
+                <div class="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
+                    <div class="w-2 h-8 bg-[#D4AF37]"></div>
+                    <h3 class="font-elite text-lg font-bold">Reserves</h3>
+                </div>
+                
+                <div id="subs-list">
+                    <div class="sub-row flex items-center mb-4">
+                        <input type="text" class="sub-num" placeholder="#" maxlength="2">
+                        <input type="text" class="sub-name" placeholder="Substitute 1" spellcheck="false">
+                    </div>
+                    <div class="sub-row flex items-center mb-4">
+                        <input type="text" class="sub-num" placeholder="#" maxlength="2">
+                        <input type="text" class="sub-name" placeholder="Substitute 2" spellcheck="false">
+                    </div>
+                    <div class="sub-row flex items-center mb-4">
+                        <input type="text" class="sub-num" placeholder="#" maxlength="2">
+                        <input type="text" class="sub-name" placeholder="Substitute 3" spellcheck="false">
+                    </div>
+                    <div class="sub-row flex items-center mb-4">
+                        <input type="text" class="sub-num" placeholder="#" maxlength="2">
+                        <input type="text" class="sub-name" placeholder="Substitute 4" spellcheck="false">
+                    </div>
+                    <div class="sub-row flex items-center mb-4">
+                        <input type="text" class="sub-num" placeholder="#" maxlength="2">
+                        <input type="text" class="sub-name" placeholder="Substitute 5" spellcheck="false">
+                    </div>
+                </div>
+                <p class="text-[9px] text-gray-500 mt-4 uppercase">Only filled slots will appear on download.</p>
+            </div>
+
+        </div>
+
+        <footer class="mt-8 text-center pb-24">
+            <p class="text-[9px] text-gray-600 uppercase tracking-[0.3em]">Drag players to update their position...</p>
+        </footer>
+    </div>
+
+    <button id="download-btn" onclick="downloadLineup()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        DOWNLOAD PNG
+    </button>
+
+     <footer class="mt-20 pt-10 border-t border-white/10 pb-32">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start text-left">
+        
+        <div class="space-y-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 border-2 border-[#D4AF37] rotate-45 flex items-center justify-center">
+                    <div class="w-2 h-2 bg-[#D4AF37]"></div>
+                </div>
+                <span class="font-elite text-sm tracking-tighter gold-text">GALACTICOS FC</span>
+            </div>
+            <p class="text-gray-500 text-[11px] leading-relaxed max-w-[240px] uppercase font-medium">
+                For High-performance tactical visualization and squad management.
+            </p>
+        </div>
+
+        <div class="glass p-4 rounded-xl border border-white/5">
+            <h4 class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">System Status</h4>
+            <div class="space-y-2">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-gray-500">ENGINE</span>
+                    <span class="text-white">V3.0 STABLE</span>
+                </div>
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-gray-500">RENDER SCALE</span>
+                    <span class="text-white">100% (High-Res)</span>
+                </div>
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-gray-500">AUTO-LABELS</span>
+                    <span class="gold-text">ACTIVE</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-4 md:items-end">
+            <div class="flex gap-6">
+                <a href="#" class="text-[10px] text-gray-400 hover:text-[#D4AF37] transition-colors uppercase font-bold tracking-widest">Guide</a>
+                <a href="#" class="text-[10px] text-gray-400 hover:text-[#D4AF37] transition-colors uppercase font-bold tracking-widest">Privacy</a>
+                <a href="#" class="text-[10px] text-gray-400 hover:text-[#D4AF37] transition-colors uppercase font-bold tracking-widest">Support</a>
+            </div>
+            <p class="text-[9px] text-gray-600 uppercase">© 2024 Galacticos Tactical Systems. All Rights Reserved.</p>
+        </div>
+
+    </div>
+</footer>
+    <script>
+        const pitch = document.getElementById('pitch');
+        const formationSelect = document.getElementById('formation-select');
+        const formationBadge = document.getElementById('formation-badge');
+        let playerCount = 11;
+        let isManualMode = false;
+
+        const templates = {
+            11: { 
+                '4-3-3': [{x:50,y:90},{x:15,y:75},{x:38,y:78},{x:62,y:78},{x:85,y:75},{x:50,y:60},{x:30,y:45},{x:70,y:45},{x:20,y:20},{x:50,y:15},{x:80,y:20}],
+                '4-4-2': [{x:50,y:90},{x:15,y:75},{x:38,y:75},{x:62,y:75},{x:85,y:75},{x:15,y:48},{x:38,y:48},{x:62,y:48},{x:85,y:48},{x:40,y:18},{x:60,y:18}],
+                '4-2-3-1': [{x:50,y:90},{x:15,y:75},{x:38,y:78},{x:62,y:78},{x:85,y:75},{x:35,y:58},{x:65,y:58},{x:20,y:35},{x:50,y:35},{x:80,y:35},{x:50,y:15}],
+                '3-5-2': [{x:50,y:90},{x:30,y:78},{x:50,y:80},{x:70,y:78},{x:10,y:50},{x:30,y:50},{x:50,y:50},{x:70,y:50},{x:90,y:50},{x:40,y:20},{x:60,y:20}],
+                '4-1-4-1': [{x:50,y:90},{x:15,y:75},{x:38,y:75},{x:62,y:75},{x:85,y:75},{x:50,y:58},{x:15,y:40},{x:38,y:40},{x:62,y:40},{x:85,y:40},{x:50,y:18}],
+                '3-4-3': [{x:50,y:90},{x:25,y:78},{x:50,y:80},{x:75,y:78},{x:15,y:50},{x:40,y:50},{x:60,y:50},{x:85,y:50},{x:25,y:20},{x:50,y:15},{x:75,y:20}]
+            },
+            9: {
+                '3-3-2': [{x:50,y:90},{x:20,y:75},{x:50,y:75},{x:80,y:75},{x:20,y:45},{x:50,y:45},{x:80,y:45},{x:35,y:18},{x:65,y:18}],
+                '4-3-1': [{x:50,y:90},{x:15,y:75},{x:38,y:75},{x:62,y:75},{x:85,y:75},{x:25,y:45},{x:50,y:45},{x:75,y:45},{x:50,y:18}]
+            },
+            8: {
+                '3-3-1': [{x:50,y:90},{x:20,y:75},{x:50,y:75},{x:80,y:75},{x:20,y:45},{x:50,y:45},{x:80,y:45},{x:50,y:18}],
+                '4-2-1': [{x:50,y:90},{x:15,y:75},{x:38,y:75},{x:62,y:75},{x:85,y:75},{x:35,y:45},{x:65,y:45},{x:50,y:18}]
+            },
+            7: {
+                '3-2-1': [{x:50,y:90},{x:20,y:75},{x:50,y:75},{x:80,y:75},{x:35,y:45},{x:65,y:45},{x:50,y:18}],
+                '2-3-1': [{x:50,y:90},{x:35,y:75},{x:65,y:75},{x:20,y:45},{x:50,y:45},{x:80,y:45},{x:50,y:18}],
+                '3-3': [{x:50,y:90},{x:20,y:75},{x:50,y:75},{x:80,y:75},{x:20,y:35},{x:50,y:35},{x:80,y:35}]
+            },
+            5: {
+                '2-2': [{x:50,y:90},{x:30,y:75},{x:70,y:75},{x:30,y:25},{x:70,y:25}],
+                '1-2-1': [{x:50,y:90},{x:50,y:75},{x:25,y:45},{x:75,y:45},{x:50,y:20}]
+            },
+            4: {
+                '1-2': [{x:50,y:90},{x:50,y:70},{x:30,y:30},{x:70,y:30}],
+                '2-1': [{x:50,y:90},{x:30,y:70},{x:70,y:70},{x:50,y:30}]
+            }
+        };
+
+        function createPlayers() {
+            for (let i = 1; i <= 11; i++) {
+                const jersey = document.createElement('div');
+                jersey.className = i === 1 ? 'jersey gk-jersey' : 'jersey';
+                jersey.id = `player-${i}`;
+                jersey.innerHTML = `
+                    <input type="text" class="pos-input" value="${i===1?'GK':'POS'}" readonly spellcheck="false">
+                    <div class="jersey-icon">
+                        <div class="collar"></div>
+                        <input type="text" class="num-input" value="${i}" spellcheck="false">
+                    </div>
+                    <input type="text" class="name-input" value="${i===1?'COURTOIS':'PLAYER '+i}" spellcheck="false">
+                `;
+                makeDraggable(jersey);
+                pitch.appendChild(jersey);
+            }
+        }
+
+        function updatePlayerCount(val) {
+            playerCount = parseInt(val);
+            document.getElementById('count-display').innerText = `${playerCount}v${playerCount}`;
+            
+            pitch.style.width = (450 + (playerCount * 30)) + 'px';
+            pitch.style.height = (400 + (playerCount * 25)) + 'px';
+
+            for (let i = 1; i <= 11; i++) {
+                const p = document.getElementById(`player-${i}`);
+                i <= playerCount ? p.classList.remove('hidden-player') : p.classList.add('hidden-player');
+            }
+            
+            updateFormationDropdown();
+            const available = templates[playerCount] || {};
+            const firstForm = Object.keys(available)[0];
+            if(firstForm) applyFormationTemplate(firstForm);
+        }
+
+        function updateFormationDropdown() {
+            formationSelect.innerHTML = '<option value="">Custom</option>';
+            const available = templates[playerCount] || {};
+            Object.keys(available).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name; opt.innerText = name;
+                formationSelect.appendChild(opt);
+            });
+        }
+
+        function applyFormationTemplate(name) {
+            if (!name) return;
+            isManualMode = false;
+            formationBadge.value = name;
+            formationSelect.value = name;
+            const coords = templates[playerCount][name];
+            
+            coords.forEach((c, idx) => {
+                const p = document.getElementById(`player-${idx + 1}`);
+                if(p) {
+                    p.style.left = `${c.x}%`;
+                    p.style.top = `${c.y}%`;
+                    autoLabel(p, c.y);
+                }
+            });
+        }
+
+        function calculateCurrentFormation() {
+            if (!isManualMode || document.activeElement === formationBadge) return;
+            let def = 0, mid = 0, att = 0;
+            for (let i = 2; i <= playerCount; i++) {
+                const p = document.getElementById(`player-${i}`);
+                const y = parseFloat(p.style.top);
+                if (y > 65) def++;
+                else if (y > 35) mid++;
+                else att++;
+            }
+            formationBadge.value = `${def}-${mid}-${att}`;
+        }
+
+        function makeDraggable(el) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            el.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                e.preventDefault();
+                isDragging = true;
+                isManualMode = true;
+                el.classList.add('dragging');
+                formationSelect.value = "";
+
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                startLeft = parseFloat(el.style.left);
+                startTop = parseFloat(el.style.top);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const rect = pitch.getBoundingClientRect();
+                const deltaX = ((e.clientX - startX) / rect.width) * 100;
+                const deltaY = ((e.clientY - startY) / rect.height) * 100;
+
+                let newX = startLeft + deltaX;
+                let newY = startTop + deltaY;
+
+                newX = Math.max(5, Math.min(95, newX));
+                newY = Math.max(5, Math.min(95, newY));
+
+                el.style.left = `${newX}%`;
+                el.style.top = `${newY}%`;
+                
+                autoLabel(el, newY);
+                calculateCurrentFormation();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if(isDragging) {
+                    isDragging = false;
+                    el.classList.remove('dragging');
+                }
+            });
+        }
+
+        /**
+         * UPDATED LOGIC FOR POSITIONS
+         * Uses both X and Y coordinates to determine the role.
+         */
+        function autoLabel(el, y) {
+            if (el.id === 'player-1') return; // GK is static
+
+            // Get X coordinate from the element style
+            const x = parseFloat(el.style.left);
+            const posInput = el.querySelector('.pos-input');
+            let role = "POS";
+
+            // Y Zones: 
+            // >70: Defense
+            // 55-70: Def Mid / Wing Backs
+            // 40-55: Midfield
+            // 25-40: Attacking Mid
+            // <25: Attack
+
+            // X Zones:
+            // <30: Left
+            // >70: Right
+            // 30-70: Center
+
+            // 1. DEFENSIVE LINE (Deep)
+            if (y >= 70) {
+                if (x < 30) role = "LB";
+                else if (x > 70) role = "RB";
+                else role = "CB";
+            }
+            // 2. DEFENSIVE MID / WING BACKS
+            else if (y >= 55 && y < 70) {
+                if (x < 30) role = "LWB";
+                else if (x > 70) role = "RWB";
+                else role = "DM";
+            }
+            // 3. MIDFIELD LINE
+            else if (y >= 40 && y < 55) {
+                if (x < 30) role = "LM";
+                else if (x > 70) role = "RM";
+                else role = "CM";
+            }
+            // 4. ATTACKING MID / DEEP WINGERS
+            else if (y >= 25 && y < 40) {
+                if (x < 30) role = "LW";
+                else if (x > 70) role = "RW";
+                else role = "AM";
+            }
+            // 5. FORWARD LINE
+            else { // y < 25
+                if (x < 30) role = "LW";
+                else if (x > 70) role = "RW";
+                else if (y > 15) role = "CF"; // False 9 / Deep Forward
+                else role = "ST"; // Striker
+            }
+
+            posInput.value = role;
+        }
+
+        // --- DOWNLOAD FUNCTIONALITY ---
+        function downloadLineup() {
+            const btn = document.getElementById('download-btn');
+            const teamNameInput = document.getElementById('team-name-input');
+            const teamName = teamNameInput.value;
+            const originalText = btn.innerHTML;
+            
+            // UX feedback
+            btn.innerHTML = 'GENERATING...';
+            btn.style.opacity = '0.7';
+
+            html2canvas(document.getElementById('pitch'), {
+                backgroundColor: null, 
+                scale: 2, 
+                logging: false,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    const clonedPitch = clonedDoc.getElementById('pitch');
+                    
+                    // --- 1. Inject Team Name ---
+                    const title = clonedDoc.createElement('div');
+                    title.innerText = teamName;
+                    const computedStyle = window.getComputedStyle(teamNameInput);
+                    title.style.cssText = `
+                        position: absolute; 
+                        top: 15px; 
+                        left: 0; width: 100%; 
+                        text-align: center; 
+                        font-family: ${computedStyle.fontFamily};
+                        font-weight: ${computedStyle.fontWeight};
+                        color: rgba(212, 175, 55, 0.4); 
+                        font-size: 3rem; 
+                        z-index: 0; pointer-events: none;
+                        text-transform: uppercase;
+                        letter-spacing: 5px;
+                    `;
+                    clonedPitch.insertBefore(title, clonedPitch.firstChild);
+
+                    // --- 2. Inject Substitutes (Bottom Left) ---
+                    const subRows = document.querySelectorAll('.sub-row');
+                    const validSubs = [];
+                    
+                    subRows.forEach(row => {
+                        const num = row.querySelector('.sub-num').value.trim();
+                        const name = row.querySelector('.sub-name').value.trim();
+                        if(name) {
+                            validSubs.push({ num, name });
+                        }
+                    });
+
+                    if(validSubs.length > 0) {
+                        const subContainer = clonedDoc.createElement('div');
+                        subContainer.style.cssText = `
+                            position: absolute; 
+                            bottom: 25px; 
+                            left: 30px; 
+                            z-index: 80;
+                            text-align: left;
+                            font-family: 'Syncopate', sans-serif;
+                        `;
+                        
+                        // Header for Subs
+                        const subHeader = clonedDoc.createElement('div');
+                        subHeader.innerText = "SUBS";
+                        subHeader.style.cssText = "color: #D4AF37; font-size: 10px; font-weight: bold; margin-bottom: 5px; letter-spacing: 2px;";
+                        subContainer.appendChild(subHeader);
+
+                        validSubs.forEach(sub => {
+                            const subLine = clonedDoc.createElement('div');
+                            subLine.style.cssText = "font-size: 9px; color: rgba(255,255,255,0.8); margin-bottom: 2px; font-weight: 400; font-family: 'Inter', sans-serif; text-transform: uppercase;";
+                            
+                            // Create bold number span
+                            const numSpan = `<span style="color: #D4AF37; font-weight: bold; margin-right: 5px;">${sub.num}</span>`;
+                            subLine.innerHTML = `${sub.num ? numSpan : ''}${sub.name}`;
+                            subContainer.appendChild(subLine);
+                        });
+
+                        clonedPitch.appendChild(subContainer);
+                    }
+
+                    // --- 3. Replace Inputs with Text ---
+                    function replaceInputWithSpan(input) {
+                        const span = clonedDoc.createElement('span');
+                        span.innerText = input.value;
+                        const style = window.getComputedStyle(input);
+                        span.style.cssText = `
+                            position: absolute;
+                            top: ${input.offsetTop}px;
+                            left: ${input.offsetLeft}px;
+                            width: ${style.width};
+                            height: ${style.height};
+                            font-family: ${style.fontFamily};
+                            font-size: ${style.fontSize};
+                            font-weight: ${style.fontWeight};
+                            color: ${style.color};
+                            text-align: ${style.textAlign};
+                            text-transform: ${style.textTransform};
+                            letter-spacing: ${style.letterSpacing};
+                            text-shadow: ${style.textShadow};
+                            background: transparent;
+                            border: none;
+                            pointer-events: none;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        `;
+                        input.parentNode.replaceChild(span, input);
+                    }
+                    clonedDoc.querySelectorAll('.num-input, .name-input, .pos-input, #formation-badge').forEach(replaceInputWithSpan);
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${teamName.replace(/\s+/g, '_')}_Formation.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+            });
+        }
+
+        // Initialize
+        createPlayers();
+        updatePlayerCount(11);
+        applyFormationTemplate('4-3-3');
+    </script>
+</body>
+</html>
